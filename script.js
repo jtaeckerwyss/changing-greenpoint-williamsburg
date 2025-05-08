@@ -15,24 +15,18 @@ const map = new mapboxgl.Map({
   keyboard: false
 });
 
-function getUseCategory(zoning) {
-  if (!zoning) return 'Other';
-  if (zoning.includes('PARK')) return 'Parks';
-  if (/^M1|M3/.test(zoning) && !zoning.includes('/')) return 'Manufacturing';
-  if (zoning.includes('/')) return 'Mixed';
-  return 'Residential';
-}
-
 function updateLegend(mode) {
   const legend = document.getElementById('legend');
+
   if (mode === 'use') {
     legend.innerHTML = `
-      <strong>Zoning Use (Post-Rezoning)</strong><br>
-      <div><b>Manufacturing:</b> preserved for exclusive industrial use</div>
-      <div><b>Residential:</b> opened for new residential uses</div>
-      <div><b>Mixed:</b> New mixed zones allow both residential and light manufacturing, but tend to result in housing due to market pressure.</div>
-      <div><b>Parks:</b> open space</div>
+      <strong>Zoning Use (Post-Rezoning)</strong><br><br>
+      <div><span style="background:#ce93d8; width:12px; height:12px; display:inline-block; margin-right:6px;"></span><b>Manufacturing:</b> preserved for exclusive industrial use</div>
+      <div><span style="background:#fff176; width:12px; height:12px; display:inline-block; margin-right:6px;"></span><b>Residential:</b> opened for new residential uses</div>
+      <div><span style="background:#ffb74d; width:12px; height:12px; display:inline-block; margin-right:6px;"></span><b>Mixed:</b> New mixed zones allow both residential and light manufacturing, but tend to result in housing due to market pressure.</div>
+      <div><span style="background:#a5d6a7; width:12px; height:12px; display:inline-block; margin-right:6px;"></span><b>Parks:</b> open space</div>
       <br>
+      Learn more about the zoning codes at the 
       <a href="https://www.nyc.gov/content/planning/pages/zoning" target="_blank" style="color:#8ecae6;">NYC Department of City Planning</a>
     `;
   } else {
@@ -44,6 +38,7 @@ function updateLegend(mode) {
       <br><br>
       FAR measures building bulk by comparing total floor area to lot size. Higher FAR values allow taller or denser buildings, enabling more residential development on a site.
       <br><br>
+      Learn more about the zoning codes at the 
       <a href="https://www.nyc.gov/content/planning/pages/zoning" target="_blank" style="color:#8ecae6;">NYC Department of City Planning</a>
     `;
   }
@@ -62,8 +57,23 @@ map.on('load', () => {
   fetch('./gwzd_v5_with_bulk.geojson')
     .then(res => res.json())
     .then(data => {
+      // Preprocess USE_CATEGORY
+      for (const feature of data.features) {
+        const zone = feature.properties.ZONEDIST || '';
+        if (zone.includes('PARK')) {
+          feature.properties.USE_CATEGORY = 'Parks';
+        } else if (/^M1|M3/.test(zone) && !zone.includes('/')) {
+          feature.properties.USE_CATEGORY = 'Manufacturing';
+        } else if (zone.includes('/')) {
+          feature.properties.USE_CATEGORY = 'Mixed';
+        } else {
+          feature.properties.USE_CATEGORY = 'Residential';
+        }
+      }
+
       map.addSource('zoning', { type: 'geojson', data });
 
+      // Use Layer
       map.addLayer({
         id: 'use-fill',
         type: 'fill',
@@ -71,7 +81,7 @@ map.on('load', () => {
         paint: {
           'fill-color': [
             'match',
-            ['call', ['get', 'ZONEDIST'], ['literal', getUseCategory]],
+            ['get', 'USE_CATEGORY'],
             'Manufacturing', '#ce93d8',
             'Residential', '#fff176',
             'Mixed', '#ffb74d',
@@ -82,6 +92,7 @@ map.on('load', () => {
         }
       });
 
+      // Bulk Layer
       map.addLayer({
         id: 'bulk-fill',
         type: 'fill',
@@ -99,6 +110,7 @@ map.on('load', () => {
         }
       });
 
+      // Bulk Outlines
       map.addLayer({
         id: 'bulk-outline',
         type: 'line',
@@ -126,24 +138,22 @@ map.on('load', () => {
         offset: [0, -10]
       });
 
+      const formatHover = (p) => `
+        <strong>${p.NEIGHBORHOOD}</strong><br>
+        Prior: ${p.PRIOR_ZONING} (${p.FAR_BEFORE} FAR)<br>
+        New: ${p.ZONEDIST} (${p.FAR_AFTER} FAR)
+      `;
+
       map.on('mousemove', 'use-fill', (e) => {
         if (currentMode !== 'use') return;
         const p = e.features[0].properties;
-        popup.setLngLat(e.lngLat).setHTML(`
-          <strong>${p.NEIGHBORHOOD}</strong><br>
-          Prior: ${p.PRIOR_ZONING} (${p.FAR_BEFORE} FAR)<br>
-          New: ${p.ZONEDIST} (${p.FAR_AFTER} FAR)
-        `).addTo(map);
+        popup.setLngLat(e.lngLat).setHTML(formatHover(p)).addTo(map);
       });
 
       map.on('mousemove', 'bulk-fill', (e) => {
         if (currentMode !== 'bulk') return;
         const p = e.features[0].properties;
-        popup.setLngLat(e.lngLat).setHTML(`
-          <strong>${p.NEIGHBORHOOD}</strong><br>
-          Prior: ${p.PRIOR_ZONING} (${p.FAR_BEFORE} FAR)<br>
-          New: ${p.ZONEDIST} (${p.FAR_AFTER} FAR)
-        `).addTo(map);
+        popup.setLngLat(e.lngLat).setHTML(formatHover(p)).addTo(map);
       });
 
       map.on('mouseleave', 'use-fill', () => { popup.remove(); map.getCanvas().style.cursor = ''; });
