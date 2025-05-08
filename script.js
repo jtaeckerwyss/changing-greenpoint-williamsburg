@@ -15,6 +15,27 @@ const map = new mapboxgl.Map({
   keyboard: false
 });
 
+// Lookup for residential FAR values
+const residentialFARs = {
+  R6: 2.43,
+  R6A: 3.0,
+  R6B: 2.2,
+  R7A: 4.0,
+  R7D: 5.6,
+  R7X: 5.0,
+  R8: 6.02,
+  R5: 1.25,
+  R4: 0.75
+};
+
+function extractResidentialFAR(zone) {
+  const parts = zone.split('/');
+  for (const part of parts) {
+    if (residentialFARs[part]) return residentialFARs[part];
+  }
+  return null;
+}
+
 function updateLegend(mode) {
   const legend = document.getElementById('legend');
 
@@ -57,9 +78,12 @@ map.on('load', () => {
   fetch('./gwzd_v5_with_bulk.geojson')
     .then(res => res.json())
     .then(data => {
-      // Preprocess USE_CATEGORY
+      // Preprocess categories and FAR updates
       for (const feature of data.features) {
         const zone = feature.properties.ZONEDIST || '';
+        const prior = feature.properties.PRIOR_ZONING || '';
+
+        // Use category
         if (zone.includes('PARK')) {
           feature.properties.USE_CATEGORY = 'Parks';
         } else if (/^M1|M3/.test(zone) && !zone.includes('/')) {
@@ -69,11 +93,18 @@ map.on('load', () => {
         } else {
           feature.properties.USE_CATEGORY = 'Residential';
         }
+
+        // Update FAR_AFTER for Mixed to reflect the R portion
+        const far = extractResidentialFAR(zone);
+        if (far !== null) {
+          feature.properties.FAR_AFTER = far;
+          // Recalculate change
+          feature.properties.FAR_CHANGE = feature.properties.FAR_AFTER - feature.properties.FAR_BEFORE;
+        }
       }
 
       map.addSource('zoning', { type: 'geojson', data });
 
-      // Use Layer
       map.addLayer({
         id: 'use-fill',
         type: 'fill',
@@ -92,7 +123,6 @@ map.on('load', () => {
         }
       });
 
-      // Bulk Layer
       map.addLayer({
         id: 'bulk-fill',
         type: 'fill',
@@ -110,7 +140,6 @@ map.on('load', () => {
         }
       });
 
-      // Bulk Outlines
       map.addLayer({
         id: 'bulk-outline',
         type: 'line',
