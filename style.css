@@ -53,10 +53,10 @@ body {
     width: auto;
   }
   
-  .button-40 a:hover {
+  .button-40:hover {
     background-color: #555;
   }
-
+ 
   .dropdown {
     position: relative;
     display: inline-block;
@@ -66,25 +66,30 @@ body {
   .dropdown-content {
     display: none;
     position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
     background-color: #333;
-    min-width: 80px;
+    border-radius: 0.5rem;
+    min-width: 100px;
     z-index: 2;
   }
   
   .dropdown-content a {
     color: white;
-    padding: 6px 10px;
-    display: block;
+    padding: 6px 12px;
+    text-align: center;
+    border-radius: 0.5rem;
     text-decoration: none;
-  }
-  
-  .dropdown-content a:hover {
-    background-color: #555;
-  }
+    display: block;
+  }  
   
   .dropdown:hover .dropdown-content {
     display: block;
   }
+
+  .dropdown-content {
+    min-width: 100%;
+  }  
   
   .legend-bottom-right {
     position: absolute;
