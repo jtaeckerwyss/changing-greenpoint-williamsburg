@@ -20,18 +20,20 @@ function updateLegend(mode) {
   if (mode === 'use') {
     legend.innerHTML = `
       <strong>Zoning Use (Post-Rezoning)</strong><br>
-      <div><span style="background:#e57373;width:12px;height:12px;display:inline-block;margin-right:6px;"></span>Commercial</div>
-      <div><span style="background:#fff176;width:12px;height:12px;display:inline-block;margin-right:6px;"></span>Residential</div>
-      <div><span style="background:#ffb74d;width:12px;height:12px;display:inline-block;margin-right:6px;"></span>Mixed Use (MX)</div>
-      <div><span style="background:#ce93d8;width:12px;height:12px;display:inline-block;margin-right:6px;"></span>Manufacturing</div>
+      <div><span style="background:#ffb74d;width:12px;height:12px;display:inline-block;margin-right:6px;"></span>M to MX</div>
+      <div><span style="background:#fff176;width:12px;height:12px;display:inline-block;margin-right:6px;"></span>M to R</div>
+      <div><span style="background:#ce93d8;width:12px;height:12px;display:inline-block;margin-right:6px;"></span>M to M</div>
       <div><span style="background:#a5d6a7;width:12px;height:12px;display:inline-block;margin-right:6px;"></span>Parks</div>
+      <br>
+      <a href="https://www.nyc.gov/content/planning/pages/zoning" target="_blank" style="color:#8ecae6;">Learn more about the zoning codes at the NYC Department of City Planning</a>
     `;
   } else {
     legend.innerHTML = `
-      <strong>Zoning Bulk Change (FAR)</strong><br>
-      <div style="background:linear-gradient(to right, #a6cee3, white, #fdd49e); height: 15px; margin: 6px 0;"></div>
-      <span style="font-size:12px;">↓ Less Bulk</span>
-      <span style="float:right; font-size:12px;">More Bulk ↑</span>
+      <strong>New Residential Floor Area Ratio (FAR)</strong><br>
+      <div style="background:linear-gradient(to right, #5ed7ff, transparent); height: 15px; margin: 6px 0;"></div>
+      FAR measures building bulk by comparing total floor area to lot size. Higher FAR values allow taller or denser buildings, enabling more residential development on a site.
+      <br><br>
+      <a href="https://www.nyc.gov/content/planning/pages/zoning" target="_blank" style="color:#8ecae6;">Learn more about the zoning codes at the NYC Department of City Planning</a>
     `;
   }
 }
@@ -51,6 +53,7 @@ map.on('load', () => {
     .then(data => {
       map.addSource('zoning', { type: 'geojson', data });
 
+      // Use layer
       map.addLayer({
         id: 'use-fill',
         type: 'fill',
@@ -64,8 +67,8 @@ map.on('load', () => {
             'R6B', '#fff176',
             'R7A', '#fff176',
             'R8', '#fff176',
-            'C4-3A', '#e57373',
-            'C6-2', '#e57373',
+            'C4-3A', '#fff176',
+            'C6-2', '#fff176',
             'M1-2', '#ce93d8',
             'M3-1', '#ce93d8',
             'M1-2/R6A', '#ffb74d',
@@ -78,17 +81,7 @@ map.on('load', () => {
         }
       });
 
-      map.addLayer({
-        id: 'use-outline',
-        type: 'line',
-        source: 'zoning',
-        filter: ['!=', ['get', 'ZONEDIST'], ['get', 'PRIOR_ZONING']],
-        paint: {
-          'line-color': '#FFD700',
-          'line-width': 1
-        }
-      });
-
+      // Bulk change (FAR) layer
       map.addLayer({
         id: 'bulk-fill',
         type: 'fill',
@@ -99,11 +92,10 @@ map.on('load', () => {
             'interpolate',
             ['linear'],
             ['get', 'FAR_CHANGE'],
-            -3, '#a6cee3',
-            0, '#ffffff',
-            3, '#fdd49e'
+            0, 'transparent',
+            6, '#5ed7ff'
           ],
-          'fill-opacity': 0.6
+          'fill-opacity': 1
         }
       });
 
@@ -123,26 +115,25 @@ map.on('load', () => {
         offset: [0, -10]
       });
 
+      function formatHover(e) {
+        const p = e.features[0].properties;
+        return `
+          <strong>${p.NEIGHBORHOOD}</strong><br>
+          Prior: ${p.PRIOR_ZONING} (${p.FAR_BEFORE})<br>
+          New: ${p.ZONEDIST} (${p.FAR_AFTER})
+        `;
+      }
+
       map.on('mousemove', 'use-fill', (e) => {
         if (currentMode !== 'use') return;
-        const props = e.features[0].properties;
         map.getCanvas().style.cursor = 'pointer';
-        popup.setLngLat(e.lngLat).setHTML(`
-          <div><strong>${props.NEIGHBORHOOD}</strong><br>
-          Prior: ${props.PRIOR_ZONING}<br>
-          New: ${props.ZONEDIST}</div>
-        `).addTo(map);
+        popup.setLngLat(e.lngLat).setHTML(formatHover(e)).addTo(map);
       });
 
       map.on('mousemove', 'bulk-fill', (e) => {
         if (currentMode !== 'bulk') return;
-        const props = e.features[0].properties;
         map.getCanvas().style.cursor = 'pointer';
-        popup.setLngLat(e.lngLat).setHTML(`
-          <div><strong>${props.NEIGHBORHOOD}</strong><br>
-          FAR Before: ${props.FAR_BEFORE}<br>
-          FAR After: ${props.FAR_AFTER}</div>
-        `).addTo(map);
+        popup.setLngLat(e.lngLat).setHTML(formatHover(e)).addTo(map);
       });
 
       map.on('mouseleave', 'use-fill', () => { popup.remove(); map.getCanvas().style.cursor = ''; });
