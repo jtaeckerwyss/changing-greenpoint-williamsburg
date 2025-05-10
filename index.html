@@ -10,20 +10,26 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+
   <div id="navbar">
     <div id="nav-left">Greenpoint-Williamsburg Rezoning (2005): <span id="page-label">Zoning Use</span></div>
-    <div id="nav-right" class="dropdown">
-      <button class="button-40">Zoning</button>
-      <div class="dropdown-content">
-        <a href="#" onclick="setMapMode('use')">Use</a>
-        <a href="#" onclick="setMapMode('bulk')">Bulk</a>
+    <div id="nav-right">
+      <!-- Zoning dropdown (left) -->
+      <div class="dropdown">
+        <button class="button-40">Zoning</button>
+        <div class="dropdown-content">
+          <a href="#" onclick="setMapMode('use')">Use</a>
+          <a href="#" onclick="setMapMode('bulk')">Bulk</a>
+        </div>
       </div>
-    </div>
-    <div id="nav-right" class="dropdown">
-      <button class="button-40">Land</button>
-      <div class="dropdown-content">
-        <a href="#" onclick="setMapMode('building')">Building</a>
-        <a href="#" onclick="setMapMode('value')">Value</a>
+  
+      <!-- Land dropdown (right) -->
+      <div class="dropdown">
+        <button class="button-40">Land</button>
+        <div class="dropdown-content">
+          <a href="#" onclick="setMapMode('building')">Building</a>
+          <a href="#" onclick="setMapMode('value')">Value</a>
+        </div>
       </div>
     </div>
   </div>
