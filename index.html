@@ -7,38 +7,22 @@
   <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
   <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
-  <link rel="stylesheet" href="style_land_zoning.css" />
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <!-- NAVBAR -->
   <div id="navbar">
     <div id="nav-left">Greenpoint-Williamsburg Rezoning (2005): <span id="page-label">Zoning Use</span></div>
-    <div id="nav-right">
-      <!-- Zoning Tab -->
-      <div class="dropdown">
-        <button class="button-40">Zoning</button>
-        <div class="dropdown-content">
-          <a href="#" onclick="setMapMode('use')">Use</a>
-          <a href="#" onclick="setMapMode('bulk')">Bulk</a>
-        </div>
-      </div>
-
-      <!-- Land Tab -->
-      <div class="dropdown">
-        <button class="button-40">Land</button>
-        <div class="dropdown-content">
-          <a href="#" onclick="setMapMode('building')">Building</a>
-          <a href="#" onclick="setMapMode('value')">Value</a>
-        </div>
+    <div id="nav-right" class="dropdown">
+      <button class="button-40">Zoning</button>
+      <div class="dropdown-content">
+        <a href="#" onclick="setMapMode('use')">Use</a>
+        <a href="#" onclick="setMapMode('bulk')">Bulk</a>
       </div>
     </div>
   </div>
 
-  <!-- MAP & LEGEND -->
   <div id="map-container"></div>
   <div id="legend" class="legend-bottom-right"></div>
-
-  <!-- SCRIPT -->
-  <script src="script_land_zoning.js" defer></script>
+  <script src="script.js" defer></script>
 </body>
 </html>
