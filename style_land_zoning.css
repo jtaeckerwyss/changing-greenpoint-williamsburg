@@ -1,8 +1,10 @@
+/* General body + font */
 body {
     margin: 0;
     font-family: sans-serif;
   }
   
+  /* Positioning the map below navbar */
   #map-container {
     position: absolute;
     top: 60px;
@@ -11,6 +13,7 @@ body {
     right: 0;
   }
   
+  /* Top navbar styling */
   #navbar {
     position: absolute;
     top: 0;
@@ -31,32 +34,25 @@ body {
     font-weight: bold;
   }
   
+  /* Navigation button styling */
   .button-40 {
     background-color: #333;
     border: 1px solid transparent;
     border-radius: .75rem;
-    box-sizing: border-box;
     color: #F0F0F0;
     cursor: pointer;
     font-size: 1.25rem;
     font-weight: 600;
-    line-height: 1.5rem;
     padding: 0.75rem 1.2rem;
     margin: .5rem;
-    text-align: center;
-    text-decoration: none;
-    transition-duration: .2s;
-    transition-property: background-color, border-color, color, fill, stroke;
-    transition-timing-function: cubic-bezier(.4, 0, 0.2, 1);
-    user-select: none;
-    touch-action: manipulation;
-    width: auto;
+    transition: background-color 0.2s ease;
   }
   
   .button-40:hover {
     background-color: #555;
   }
- 
+  
+  /* Dropdown menus under buttons */
   .dropdown {
     position: relative;
     display: inline-block;
@@ -81,16 +77,17 @@ body {
     border-radius: 0.5rem;
     text-decoration: none;
     display: block;
-  }  
+  }
+  
+  .dropdown-content a:hover {
+    background-color: #555;
+  }
   
   .dropdown:hover .dropdown-content {
     display: block;
   }
-
-  .dropdown-content {
-    min-width: 100%;
-  }  
   
+  /* Bottom-right legend styling */
   .legend-bottom-right {
     position: absolute;
     bottom: 20px;
@@ -104,6 +101,7 @@ body {
     z-index: 5;
   }
   
+  /* Popup style */
   .mapboxgl-popup-content {
     background-color: black !important;
     color: white !important;
@@ -112,7 +110,6 @@ body {
     font-size: 10px;
     line-height: 1.15;
   }
-  
   .mapboxgl-popup-tip {
     display: none !important;
   }
