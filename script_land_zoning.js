@@ -77,8 +77,8 @@ function setMapMode(mode) {
 map.on('load', async () => {
     // Load all datasets
     const zoning = await fetch('./gwzd_v5_with_bulk.geojson').then(res => res.json());
-    const building = await fetch('./building_change_blocks.geojson').then(res => res.json());
-    const value = await fetch('./value_change_blocks.geojson').then(res => res.json());
+    const building = await fetch('./blocks_final.geojson').then(res => res.json());
+    const value = await fetch('./blocks_final.geojson').then(res => res.json());
 
     // Source: zoning data
     map.addSource('zoning', { type: 'geojson', data: zoning });
