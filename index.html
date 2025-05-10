@@ -4,51 +4,28 @@
   <meta charset="utf-8" />
   <title>Greenpoint-Williamsburg Rezoning (2005)</title>
   <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
-
-  <!-- Mapbox CSS & JS -->
   <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
   <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
-
-  <!-- Turf.js for bounding box -->
   <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
-
-  <!-- Custom CSS -->
-  <link rel="stylesheet" href="style_land_zoning.css" />
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-
-  <!-- Top Navigation Bar -->
   <div id="navbar">
-    <div id="nav-left">
-      Greenpoint-Williamsburg Rezoning (2005): <span id="page-label">Zoning Use</span>
-    </div>
-
-    <div id="nav-right">
-      <div class="dropdown">
-        <button class="button-40">Zoning</button>
-        <div class="dropdown-content">
-          <a href="#" onclick="setMapMode('use')">Use</a>
-          <a href="#" onclick="setMapMode('bulk')">Bulk</a>
-        </div>
-      </div>
-
-      <div class="dropdown">
-        <button class="button-40">Land</button>
-        <div class="dropdown-content">
-          <a href="#" onclick="setMapMode('building')">Building</a>
-          <a href="#" onclick="setMapMode('value')">Value</a>
-        </div>
+    <div id="nav-left">Greenpoint-Williamsburg Rezoning (2005): <span id="page-label">Zoning Use</span></div>
+    <div id="nav-right" class="dropdown">
+      <button class="button-40">Zoning</button>
+      <div class="dropdown-content">
+        <a href="#" onclick="setMapMode('use')">Use</a>
+        <a href="#" onclick="setMapMode('bulk')">Bulk</a>
+        <a href="#" onclick="setMapMode('building')">Building</a>
+        <a href="#" onclick="setMapMode('value')">Value</a>
       </div>
     </div>
   </div>
 
-  <!-- Map Container -->
   <div id="map-container"></div>
-
-  <!-- Legend -->
   <div id="legend" class="legend-bottom-right"></div>
 
-  <!-- Custom Script -->
-  <script src="script_land_zoning.js"></script>
+  <script src="script.js" defer></script>
 </body>
 </html>
