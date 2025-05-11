@@ -15,44 +15,45 @@ const map = new mapboxgl.Map({
   keyboard: false
 });
 
+// Update legend based on mode
 function updateLegend(mode) {
   const legend = document.getElementById('legend');
+
   if (mode === 'use') {
     legend.innerHTML = `
       <strong>Zoning Use (Post-Rezoning)</strong><br><br>
-      <div><span style="background:#ce93d8;" class="legend-color-box"></span><b>Manufacturing:</b> preserved for exclusive industrial use</div>
-      <div><span style="background:#fff176;" class="legend-color-box"></span><b>Residential:</b> opened for new residential uses</div>
-      <div><span style="background:#ffb74d;" class="legend-color-box"></span><b>Mixed:</b> allows both residential and light manufacturing</div>
-      <div><span style="background:#a5d6a7;" class="legend-color-box"></span><b>Parks:</b> open space</div>
-      <div><span style="background:#cccccc;" class="legend-color-box"></span><b>Unknown:</b> unclassified</div>
+      <div><span class="legend-color-box" style="background:#ce93d8;"></span><b>Manufacturing:</b> preserved for exclusive industrial use</div>
+      <div><span class="legend-color-box" style="background:#fff176;"></span><b>Residential:</b> opened for new residential uses</div>
+      <div><span class="legend-color-box" style="background:#ffb74d;"></span><b>Mixed:</b> allows both residential and light manufacturing</div>
+      <div><span class="legend-color-box" style="background:#a5d6a7;"></span><b>Parks:</b> open space</div>
       <br>
-      Learn more at the <a href="https://www.nyc.gov/content/planning/pages/zoning" target="_blank" style="color:#8ecae6;">NYC Department of City Planning</a>
+      Learn more at <a href="https://www.nyc.gov/content/planning/pages/zoning" target="_blank" style="color:#8ecae6;">NYC Department of City Planning</a>
     `;
   } else if (mode === 'bulk' || mode === 'building') {
     legend.innerHTML = `
-      <strong>New Residential Floor Area Ratio (FAR)</strong><br>
+      <strong>New Floor Area Ratio (FAR)</strong><br>
       <div style="background:linear-gradient(to right, transparent, #5ed7ff); height: 15px; margin: 6px 0;"></div>
-      <span style="font-size:12px;">0</span><span style="float:right; font-size:12px;">6</span><br><br>
-      FAR measures building bulk by comparing total floor area to lot size.<br>
-      All FAR is calculated at the block level.<br><br>
-      Learn more at the 
-      <a href="https://www.nyc.gov/content/planning/pages/zoning" target="_blank" style="color:#8ecae6;">NYC Department of City Planning</a>
+      <span style="font-size:12px;">0</span>
+      <span style="float:right; font-size:12px;">6</span><br><br>
+      FAR compares floor area to lot size. Includes both residential and manufacturing densities.<br><br>
+      Learn more at <a href="https://www.nyc.gov/content/planning/pages/zoning" target="_blank" style="color:#8ecae6;">NYC Department of City Planning</a>
     `;
   } else if (mode === 'value') {
     legend.innerHTML = `
       <strong>Change in Assessed Property Value (2004–2025)</strong><br>
-      <div style="background:linear-gradient(to right, transparent, limegreen); height: 15px; margin: 6px 0;"></div>
-      <span style="font-size:12px;">$0</span><span style="float:right; font-size:12px;">$150 million</span><br><br>
-      Assessed value reflects the city’s taxable estimate of property worth.<br>
-      All property values are calculated at the block level.<br><br>
-      Learn more at the 
-      <a href="https://www.nyc.gov/site/finance/property/property-determining-your-assessed-value.page" target="_blank" style="color:#8ecae6;">NYC Department of Finance</a>
+      <div style="background:linear-gradient(to right, #a9746e, transparent, limegreen); height: 15px; margin: 6px 0;"></div>
+      <span style="font-size:12px;">Loss</span>
+      <span style="float:right; font-size:12px;">Gain</span><br><br>
+      Property values calculated at block level.<br><br>
+      Learn more at <a href="https://www.nyc.gov/site/finance/property/property-determining-your-assessed-value.page" target="_blank" style="color:#8ecae6;">NYC Department of Finance</a>
     `;
   }
 }
 
+// Handle view toggle
 function setMapMode(mode) {
   currentMode = mode;
+
   document.getElementById('page-label').innerText = {
     use: 'Zoning Use',
     bulk: 'Zoning Bulk',
@@ -63,28 +64,24 @@ function setMapMode(mode) {
   ['use', 'bulk', 'building', 'value'].forEach(layer => {
     map.setLayoutProperty(`${layer}-fill`, 'visibility', mode === layer ? 'visible' : 'none');
     if (layer === 'bulk') {
-      map.setLayoutProperty('bulk-outline', 'visibility', mode === 'bulk' ? 'visible' : 'none');
+      map.setLayoutProperty(`bulk-outline`, 'visibility', mode === 'bulk' ? 'visible' : 'none');
     }
   });
 
   updateLegend(mode);
 }
 
+// Load GeoJSON sources
 map.on('load', async () => {
   const zoningData = await fetch('./gwzd_v5_with_bulk.geojson').then(res => res.json());
   const blockData = await fetch('./blocks_final.geojson').then(res => res.json());
 
-  // Preprocess zoning features to categorize by use
   zoningData.features.forEach(f => {
     const z = f.properties.ZONEDIST || '';
-    const cat = z.includes('PARK') ? 'Parks'
-      : (/^M1|M3/.test(z) && !z.includes('/')) ? 'Manufacturing'
+    f.properties.USE_CATEGORY = z.includes('PARK') ? 'Parks'
+      : (/^M1|M2|M3/.test(z) && !z.includes('/')) ? 'Manufacturing'
       : z.includes('/') ? 'Mixed'
-      : z ? 'Residential' : 'Unknown';
-    f.properties.USE_CATEGORY = cat;
-
-    // Log to help debugging
-    console.log(`ZONEDIST: "${z}" → USE_CATEGORY: "${cat}"`);
+      : 'Residential';
   });
 
   map.addSource('zoning', { type: 'geojson', data: zoningData });
@@ -101,7 +98,6 @@ map.on('load', async () => {
         'Residential', '#fff176',
         'Mixed', '#ffb74d',
         'Parks', '#a5d6a7',
-        'Unknown', '#cccccc',
         '#9e9e9e'
       ],
       'fill-opacity': 0.6
@@ -115,7 +111,7 @@ map.on('load', async () => {
     layout: { visibility: 'none' },
     paint: {
       'fill-color': [
-        'interpolate', ['linear'], ['get', 'FAR_CHANGE'],
+        'interpolate', ['linear'], ['get', 'FAR_AFTER'],
         0, 'transparent',
         6, '#5ed7ff'
       ],
@@ -142,7 +138,7 @@ map.on('load', async () => {
     paint: {
       'fill-color': [
         'interpolate', ['linear'], ['get', 'far_change'],
-        -6, '#a9746e',
+        -1, '#a9746e',
         0, 'transparent',
         6, '#5ed7ff'
       ],
@@ -158,8 +154,9 @@ map.on('load', async () => {
     paint: {
       'fill-color': [
         'interpolate', ['linear'], ['get', 'value_change'],
+        -500000000, '#a9746e',
         0, 'transparent',
-        150000000, 'limegreen'
+        500000000, 'limegreen'
       ],
       'fill-opacity': 1
     }
@@ -179,33 +176,38 @@ map.on('load', async () => {
     offset: [0, -10]
   });
 
-  const showPopup = (e) => {
-    const p = e.features[0].properties;
-    const html = (currentMode === 'use' || currentMode === 'bulk') ? `
-      <strong>${p.NEIGHBORHOOD || 'Zoning Info'}</strong><br>
-      Prior Zoning: ${p.PRIOR_ZONING || 'N/A'}<br>
-      New Zoning: ${p.ZONEDIST || 'N/A'}<br>
-      FAR Before: ${p.FAR_BEFORE || 'N/A'}<br>
-      FAR After: ${p.FAR_AFTER || 'N/A'}
-    ` : `
-      <strong>Block ${p.block || p.BLOCK || 'N/A'}</strong><br>
-      2004 Value: $${(+p.value_2004 || 0).toLocaleString()}<br>
-      2025 Value: $${(+p.value_2025 || 0).toLocaleString()}<br>
-      FAR 2004: ${p.far_2004 || 'N/A'}<br>
-      FAR 2025: ${p.far_2025 || 'N/A'}
-    `;
-    popup.setLngLat(e.lngLat).setHTML(html).addTo(map);
-  };
+  // Format numbers
+  const round = (val) => val !== undefined && !isNaN(val) ? Math.round(val * 10) / 10 : 'N/A';
+  const roundVal = (v) => v !== undefined && !isNaN(v) ? `$${Math.round(v / 100000) * 100000}` : 'N/A';
 
-  map.on('mousemove', 'use-fill', e => currentMode === 'use' && showPopup(e));
-  map.on('mousemove', 'bulk-fill', e => currentMode === 'bulk' && showPopup(e));
-  map.on('mousemove', 'building-fill', e => currentMode === 'building' && showPopup(e));
-  map.on('mousemove', 'value-fill', e => currentMode === 'value' && showPopup(e));
+  map.on('mousemove', (e) => {
+    const features = map.queryRenderedFeatures(e.point, {
+      layers: currentMode === 'use' ? ['use-fill']
+           : currentMode === 'bulk' ? ['bulk-fill']
+           : currentMode === 'building' ? ['building-fill']
+           : ['value-fill']
+    });
 
-  map.on('mouseleave', 'use-fill', () => popup.remove());
-  map.on('mouseleave', 'bulk-fill', () => popup.remove());
-  map.on('mouseleave', 'building-fill', () => popup.remove());
-  map.on('mouseleave', 'value-fill', () => popup.remove());
+    if (features.length) {
+      const p = features[0].properties;
+      const html = (currentMode === 'use' || currentMode === 'bulk') ? `
+        <strong>${p.NEIGHBORHOOD || 'Zoning Info'}</strong><br>
+        Prior Zoning: ${p.PRIOR_ZONING || 'N/A'}<br>
+        New Zoning: ${p.ZONEDIST || 'N/A'}<br>
+        FAR Before: ${round(p.FAR_BEFORE)}<br>
+        FAR After: ${round(p.FAR_AFTER)}
+      ` : `
+        <strong>Block ${p.block || p.BLOCK || 'N/A'}</strong><br>
+        2004 Value: ${roundVal(+p.value_2004)}<br>
+        2025 Value: ${roundVal(+p.value_2025)}<br>
+        FAR 2004: ${round(+p.far_2004)}<br>
+        FAR 2025: ${round(+p.far_2025)}
+      `;
+      popup.setLngLat(e.lngLat).setHTML(html).addTo(map);
+    } else {
+      popup.remove();
+    }
+  });
 
   updateLegend(currentMode);
 });
