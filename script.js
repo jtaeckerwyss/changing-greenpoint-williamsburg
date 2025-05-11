@@ -240,11 +240,8 @@ map.on('load', async () => {
 
   updateLegend(currentMode);
 
-  // Intro popup close handler
-  const introBtn = document.getElementById('close-intro');
-  if (introBtn) {
-    introBtn.addEventListener('click', () => {
-      document.getElementById('intro-popup').style.display = 'none';
-    });
-  }
+  // Intro popup click-to-dismiss
+document.getElementById('intro-popup').addEventListener('click', () => {
+  document.getElementById('intro-popup').style.display = 'none';
+});
 });
