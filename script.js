@@ -34,17 +34,17 @@ function updateLegend(mode) {
       <strong>New Floor Area Ratio (FAR)</strong><br>
       <div style="background:linear-gradient(to right, transparent, #5ed7ff); height: 15px; margin: 6px 0;"></div>
       <span style="font-size:12px;">0</span>
-      <span style="float:right; font-size:12px;">6</span><br><br>
+      <span style="float:right; font-size:12px;">4</span><br><br>
       FAR compares floor area to lot size. Includes both residential and manufacturing densities.<br><br>
       Learn more at <a href="https://www.nyc.gov/content/planning/pages/zoning" target="_blank" style="color:#8ecae6;">NYC Department of City Planning</a>
     `;
   } else if (mode === 'value') {
     legend.innerHTML = `
       <strong>Change in Assessed Property Value (2004–2025)</strong><br>
-      <div style="background:linear-gradient(to right, #a9746e, transparent, limegreen); height: 15px; margin: 6px 0;"></div>
-      <span style="font-size:12px;">Loss</span>
-      <span style="float:right; font-size:12px;">Gain</span><br><br>
-      Property values calculated at block level.<br><br>
+      <div style="background:linear-gradient(to right transparent, limegreen); height: 15px; margin: 6px 0;"></div>
+      <span style="font-size:12px;">$0</span>
+      <span style="float:right; font-size:12px;">$100 million</span><br><br>
+      Total property values calculated at block level.<br><br>
       Learn more at <a href="https://www.nyc.gov/site/finance/property/property-determining-your-assessed-value.page" target="_blank" style="color:#8ecae6;">NYC Department of Finance</a>
     `;
   }
@@ -113,7 +113,7 @@ map.on('load', async () => {
       'fill-color': [
         'interpolate', ['linear'], ['get', 'FAR_AFTER'],
         0, 'transparent',
-        6, '#5ed7ff'
+        4, '#5ed7ff'
       ],
       'fill-opacity': 1
     }
@@ -140,7 +140,7 @@ map.on('load', async () => {
         'interpolate', ['linear'], ['get', 'far_change'],
         -1, '#a9746e',
         0, 'transparent',
-        6, '#5ed7ff'
+        4, '#5ed7ff'
       ],
       'fill-opacity': 1
     }
@@ -154,9 +154,8 @@ map.on('load', async () => {
     paint: {
       'fill-color': [
         'interpolate', ['linear'], ['get', 'value_change'],
-        -500000000, '#a9746e',
         0, 'transparent',
-        500000000, 'limegreen'
+        100000000, 'limegreen'
       ],
       'fill-opacity': 1
     }
