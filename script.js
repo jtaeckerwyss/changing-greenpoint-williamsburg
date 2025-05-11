@@ -45,7 +45,7 @@ function updateLegend(mode) {
     legend.innerHTML = `
       <strong>Change in Assessed Property Value (2004–2025)</strong><br>
       <div style="background:linear-gradient(to right, transparent, limegreen); height: 15px; margin: 6px 0;"></div>
-      <span style="font-size:12px;">0</span><span style="float:right; font-size:12px;">Max</span><br><br>
+      <span style="font-size:12px;">$0</span><span style="float:right; font-size:12px;">$150 million</span><br><br>
       Assessed value reflects the city's taxable estimate of property worth.<br>
       All property values are calculated at the block level.<br><br>
       Learn more at the 
@@ -83,6 +83,15 @@ map.on('load', async () => {
   // Add zoning and block sources
   map.addSource('zoning', { type: 'geojson', data: zoningData });
   map.addSource('blocks', { type: 'geojson', data: blockData });
+
+  // Derive zoning use categories
+zoningData.features.forEach(f => {
+  const z = f.properties.ZONEDIST || '';
+  f.properties.USE_CATEGORY = z.includes('PARK') ? 'Parks'
+    : (/^M1|M3/.test(z) && !z.includes('/')) ? 'Manufacturing'
+    : z.includes('/') ? 'Mixed'
+    : 'Residential';
+});
 
   // Zoning use fill
   map.addLayer({
@@ -139,6 +148,7 @@ map.on('load', async () => {
     paint: {
       'fill-color': [
         'interpolate', ['linear'], ['get', 'far_change'],
+        -6, '#a9746e',
         0, 'transparent',
         6, '#5ed7ff'
       ],
@@ -155,9 +165,8 @@ map.on('load', async () => {
     paint: {
       'fill-color': [
         'interpolate', ['linear'], ['get', 'value_change'],
-        -500000000, '#a9746e',
         0, 'transparent',
-        500000000, 'limegreen'
+        150000000, 'limegreen'
       ],
       'fill-opacity': 1
     }
