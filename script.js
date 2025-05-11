@@ -31,16 +31,17 @@ function updateLegend(mode) {
     `;
   } else if (mode === 'bulk' || mode === 'building') {
     legend.innerHTML = `
-      <strong>New Floor Area Ratio (FAR)</strong><br>
-      <div style="background:linear-gradient(to right, transparent, #5ed7ff); height: 15px; margin: 6px 0;"></div>
-      <span style="font-size:12px;">0</span>
+      <strong>Change in Actual Floor Area Ratio (FAR), 2004-2025</strong><br>
+      <div style="background:linear-gradient(to right, #a9746e, transparent, #5ed7ff); height: 15px; margin: 6px 0;"></div>
+      <span style="font-size:12px;">-4</span>
+      <span style="float:center; font-size:12px;">0</span>
       <span style="float:right; font-size:12px;">4</span><br><br>
       FAR compares floor area to lot size. Includes both residential and manufacturing densities.<br><br>
       Learn more at <a href="https://www.nyc.gov/content/planning/pages/zoning" target="_blank" style="color:#8ecae6;">NYC Department of City Planning</a>
     `;
   } else if (mode === 'value') {
     legend.innerHTML = `
-      <strong>Change in Assessed Property Value (2004–2025)</strong><br>
+      <strong>Change in Assessed Property Value, 2004–2025</strong><br>
       <div style="background:linear-gradient(to right transparent, limegreen); height: 15px; margin: 6px 0;"></div>
       <span style="font-size:12px;">$0</span>
       <span style="float:right; font-size:12px;">$100 million</span><br><br>
@@ -138,7 +139,7 @@ map.on('load', async () => {
     paint: {
       'fill-color': [
         'interpolate', ['linear'], ['get', 'far_change'],
-        -1, '#a9746e',
+        -4, '#a9746e',
         0, 'transparent',
         4, '#5ed7ff'
       ],
