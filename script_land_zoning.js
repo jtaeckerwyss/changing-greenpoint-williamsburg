@@ -70,37 +70,35 @@ function setMapMode(mode) {
     updateLegend(mode);
 }
 
-map.on('load', async () => {
-    const zoning = await fetch('./gwzd_v5_with_bulk.geojson').then(res => res.json());
-    const blocks = await fetch('./blocks_final.geojson').then(res => res.json());
-
-    blocks.features = blocks.features.map(f => {
-        f.properties.value_change = +f.properties.value_change || 0;
-        f.properties.far_change = +f.properties.far_change || 0;
-        return f;
-    });
-
-    map.addSource('zoning', { type: 'geojson', data: zoning });
-    map.addSource('blocks', { type: 'geojson', data: blocks });
-
-    map.addLayer({
-        id: 'use-fill',
-        type: 'fill',
-        source: 'zoning',
-        paint: {
-            'fill-color': [
-                'match',
-                ['get', 'USE_CATEGORY'],
-                'Manufacturing', '#ce93d8',
-                'Residential', '#fff176',
-                'Mixed', '#ffb74d',
-                'Parks', '#a5d6a7',
-                '#9e9e9e'
-            ],
-            'fill-opacity': 0.6
-        }
-    });
-
+map.on('load', () => {
+    fetch('./gwzd_v5_with_bulk.geojson')
+      .then(res => res.json())
+      .then(data => {
+        // Process and add zoning layer(s) here
+      });
+  
+    fetch('./blocks_final.geojson')
+      .then(res => res.json())
+      .then(data => {
+        // Process and add block layers here
+      });
+  
+    // ✅ Now it's safe to attach hover handlers
+    const popup = new mapboxgl.Popup({ ... });
+  
+    map.on('mousemove', 'use-fill', e => { /* logic */ });
+    map.on('mousemove', 'bulk-fill', e => { /* logic */ });
+    map.on('mousemove', 'building-fill', e => { /* logic */ });
+    map.on('mousemove', 'value-fill', e => { /* logic */ });
+  
+    map.on('mouseleave', 'use-fill', () => popup.remove());
+    map.on('mouseleave', 'bulk-fill', () => popup.remove());
+    map.on('mouseleave', 'building-fill', () => popup.remove());
+    map.on('mouseleave', 'value-fill', () => popup.remove());
+  
+    updateLegend(currentMode);
+  });
+  
     map.addLayer({
         id: 'bulk-fill',
         type: 'fill',
