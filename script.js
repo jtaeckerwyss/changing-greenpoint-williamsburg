@@ -31,20 +31,21 @@ function updateLegend(mode) {
     `;
   } else if (mode === 'bulk' || mode === 'building') {
     legend.innerHTML = `
-      <strong>Change in Actual Floor Area Ratio (FAR), 2004-2025</strong><br>
+      <strong>Change in Actual Floor Area Ratio (FAR), 2004–2025</strong><br>
       <div style="background:linear-gradient(to right, #a9746e, transparent, #5ed7ff); height: 15px; margin: 6px 0;"></div>
-      <span style="font-size:12px;">-4</span>
-      <span style="float:center; font-size:12px;">0</span>
-      <span style="float:right; font-size:12px;">4</span><br><br>
+      <div style="display:flex; justify-content:space-between; font-size:12px;">
+        <span>-4</span><span>0</span><span>4</span>
+      </div><br>
       FAR compares floor area to lot size. Includes both residential and manufacturing densities.<br><br>
       Learn more at <a href="https://www.nyc.gov/content/planning/pages/zoning" target="_blank" style="color:#8ecae6;">NYC Department of City Planning</a>
     `;
   } else if (mode === 'value') {
     legend.innerHTML = `
       <strong>Change in Assessed Property Value, 2004–2025</strong><br>
-      <div style="background:linear-gradient(to right transparent, limegreen); height: 15px; margin: 6px 0;"></div>
-      <span style="font-size:12px;">$0</span>
-      <span style="float:right; font-size:12px;">$100 million</span><br><br>
+      <div style="background:linear-gradient(to right, transparent, limegreen); height: 15px; margin: 6px 0;"></div>
+      <div style="display:flex; justify-content:space-between; font-size:12px;">
+        <span>$0</span><span>$100 million</span>
+      </div><br>
       Total property values calculated at block level.<br><br>
       Learn more at <a href="https://www.nyc.gov/site/finance/property/property-determining-your-assessed-value.page" target="_blank" style="color:#8ecae6;">NYC Department of Finance</a>
     `;
@@ -64,8 +65,14 @@ function setMapMode(mode) {
 
   ['use', 'bulk', 'building', 'value'].forEach(layer => {
     map.setLayoutProperty(`${layer}-fill`, 'visibility', mode === layer ? 'visible' : 'none');
+
+    // Handle outlines
     if (layer === 'bulk') {
       map.setLayoutProperty(`bulk-outline`, 'visibility', mode === 'bulk' ? 'visible' : 'none');
+    } else if (layer === 'building') {
+      map.setLayoutProperty(`building-outline`, 'visibility', mode === 'building' ? 'visible' : 'none');
+    } else if (layer === 'value') {
+      map.setLayoutProperty(`value-outline`, 'visibility', mode === 'value' ? 'visible' : 'none');
     }
   });
 
@@ -148,6 +155,17 @@ map.on('load', async () => {
   });
 
   map.addLayer({
+    id: 'building-outline',
+    type: 'line',
+    source: 'blocks',
+    layout: { visibility: 'none' },
+    paint: {
+      'line-color': 'white',
+      'line-width': 0.3
+    }
+  });
+
+  map.addLayer({
     id: 'value-fill',
     type: 'fill',
     source: 'blocks',
@@ -159,6 +177,17 @@ map.on('load', async () => {
         100000000, 'limegreen'
       ],
       'fill-opacity': 1
+    }
+  });
+
+  map.addLayer({
+    id: 'value-outline',
+    type: 'line',
+    source: 'blocks',
+    layout: { visibility: 'none' },
+    paint: {
+      'line-color': 'white',
+      'line-width': 0.3
     }
   });
 
@@ -177,8 +206,8 @@ map.on('load', async () => {
   });
 
   // Format numbers
-  const round = (val) => val !== undefined && !isNaN(val) ? Math.round(val * 10) / 10 : 'N/A';
-  const roundVal = (v) => v !== undefined && !isNaN(v) ? `$${Math.round(v / 100000) * 100000}` : 'N/A';
+  const round = val => val !== undefined && !isNaN(val) ? Math.round(val * 10) / 10 : 'N/A';
+  const roundVal = v => v !== undefined && !isNaN(v) ? `$${Math.round(v / 100000) * 100000}` : 'N/A';
 
   map.on('mousemove', (e) => {
     const features = map.queryRenderedFeatures(e.point, {
@@ -210,4 +239,12 @@ map.on('load', async () => {
   });
 
   updateLegend(currentMode);
+
+  // Intro popup close handler
+  const introBtn = document.getElementById('close-intro');
+  if (introBtn) {
+    introBtn.addEventListener('click', () => {
+      document.getElementById('intro-popup').style.display = 'none';
+    });
+  }
 });
