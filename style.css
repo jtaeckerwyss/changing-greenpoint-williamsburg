@@ -1,8 +1,10 @@
+/* Body */
 body {
   margin: 0;
   font-family: sans-serif;
 }
 
+/* Positioning the map below navbar */
 #map-container {
   position: absolute;
   top: 60px;
@@ -11,6 +13,7 @@ body {
   right: 0;
 }
 
+/* Top navbar styling */
 #navbar {
   position: absolute;
   top: 0;
@@ -31,6 +34,7 @@ body {
   font-weight: bold;
 }
 
+  /* Navigation button styling */
 .button-40 {
   background-color: #333;
   border: 1px solid transparent;
@@ -57,6 +61,7 @@ body {
   background-color: #555;
 }
 
+  /* Dropdown menus under buttons */
 .dropdown {
   position: relative;
   display: inline-block;
@@ -91,6 +96,7 @@ body {
   display: block;
 }
 
+  /* Bottom-right legend styling */
 .legend-bottom-right {
   position: absolute;
   bottom: 20px;
@@ -104,6 +110,7 @@ body {
   z-index: 5;
 }
 
+  /* Popup style */
 .mapboxgl-popup-content {
   background-color: black !important;
   color: white !important;

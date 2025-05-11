@@ -1,7 +1,9 @@
 mapboxgl.accessToken = 'pk.eyJ1IjoiZGJlcmdlcjMyNCIsImEiOiJjbTkxejI1ODYwMGQ1MmxvbWZreDZhMGgxIn0.nfxxsMs9W6jzp0-Wo-OEZg';
 
+// Initial mode (active map layer)
 let currentMode = 'use';
 
+// Create Mapbox map
 const map = new mapboxgl.Map({
   container: 'map-container',
   style: 'mapbox://styles/mapbox/dark-v11',
@@ -15,168 +17,161 @@ const map = new mapboxgl.Map({
   keyboard: false
 });
 
+// Update the legend content depending on selected mode
 function updateLegend(mode) {
   const legend = document.getElementById('legend');
   if (mode === 'use') {
     legend.innerHTML = `
       <strong>Zoning Use (Post-Rezoning)</strong><br><br>
-      <div><span style="background:#ce93d8; width:12px; height:12px; display:inline-block; margin-right:6px;"></span><b>Manufacturing:</b> preserved for exclusive industrial use</div>
-      <div><span style="background:#fff176; width:12px; height:12px; display:inline-block; margin-right:6px;"></span><b>Residential:</b> opened for new residential uses</div>
-      <div><span style="background:#ffb74d; width:12px; height:12px; display:inline-block; margin-right:6px;"></span><b>Mixed:</b> residential + light manufacturing</div>
-      <div><span style="background:#a5d6a7; width:12px; height:12px; display:inline-block; margin-right:6px;"></span><b>Parks:</b> open space</div>
-      <br><a href="https://www.nyc.gov/content/planning/pages/zoning" target="_blank" style="color:#8ecae6;">NYC Department of City Planning</a>
+      <div><span style="background:#ce93d8;" class="legend-color-box"></span><b>Manufacturing:</b> preserved for exclusive industrial use</div>
+      <div><span style="background:#fff176;" class="legend-color-box"></span><b>Residential:</b> opened for new residential uses</div>
+      <div><span style="background:#ffb74d;" class="legend-color-box"></span><b>Mixed:</b> allows both residential and light manufacturing</div>
+      <div><span style="background:#a5d6a7;" class="legend-color-box"></span><b>Parks:</b> open space</div>
+      <br>
+      Learn more about the zoning codes at the 
+      <a href="https://www.nyc.gov/content/planning/pages/zoning" target="_blank" style="color:#8ecae6;">NYC Department of City Planning</a>
     `;
-  } else if (mode === 'bulk') {
+  } else if (mode === 'bulk' || mode === 'building') {
     legend.innerHTML = `
       <strong>New Residential Floor Area Ratio (FAR)</strong><br>
       <div style="background:linear-gradient(to right, transparent, #5ed7ff); height: 15px; margin: 6px 0;"></div>
       <span style="font-size:12px;">0</span><span style="float:right; font-size:12px;">6</span><br><br>
-      FAR measures building bulk relative to lot size.<br><br>
-      <a href="https://www.nyc.gov/content/planning/pages/zoning" target="_blank" style="color:#8ecae6;">Learn more</a>
-    `;
-  } else if (mode === 'building') {
-    legend.innerHTML = `
-      <strong>Built FAR (2004–2025)</strong><br>
-      <div style="background:linear-gradient(to right, transparent, #5ed7ff); height: 15px; margin: 6px 0;"></div>
-      <span style="font-size:12px;">0</span><span style="float:right; font-size:12px;">6</span><br><br>
-      All FAR calculated at the block level.
+      FAR measures building bulk by comparing total floor area to lot size.<br>
+      All FAR is calculated at the block level.<br><br>
+      Learn more about the zoning codes at the 
+      <a href="https://www.nyc.gov/content/planning/pages/zoning" target="_blank" style="color:#8ecae6;">NYC Department of City Planning</a>
     `;
   } else if (mode === 'value') {
     legend.innerHTML = `
-      <strong>Change in Property Value (2004–2025)</strong><br>
-      <div style="background:linear-gradient(to right, #a9746e, transparent, limegreen); height: 15px; margin: 6px 0;"></div>
-      <span style="font-size:12px;">Loss</span><span style="float:right; font-size:12px;">Gain</span><br><br>
-      Based on NYC assessed values per block.
+      <strong>Change in Assessed Property Value (2004–2025)</strong><br>
+      <div style="background:linear-gradient(to right, transparent, limegreen); height: 15px; margin: 6px 0;"></div>
+      <span style="font-size:12px;">0</span><span style="float:right; font-size:12px;">Max</span><br><br>
+      Assessed value reflects the city's taxable estimate of property worth.<br>
+      All property values are calculated at the block level.<br><br>
+      Learn more at the 
+      <a href="https://www.nyc.gov/site/finance/property/property-determining-your-assessed-value.page" target="_blank" style="color:#8ecae6;">NYC Department of Finance</a>
     `;
   }
 }
 
+// Change the visible map layer based on user selection
 function setMapMode(mode) {
   currentMode = mode;
-  document.getElementById('page-label').innerText =
-    mode === 'use' ? 'Zoning Use' :
-    mode === 'bulk' ? 'Zoning Bulk' :
-    mode === 'building' ? 'Built FAR' :
-    'Property Value';
 
-  ['use-fill', 'bulk-fill', 'bulk-outline', 'building-fill', 'value-fill'].forEach(layer => {
-    if (map.getLayer(layer)) {
-      const visible = layer.includes(mode) || (mode === 'bulk' && layer === 'bulk-outline');
-      map.setLayoutProperty(layer, 'visibility', visible ? 'visible' : 'none');
+  document.getElementById('page-label').innerText = {
+    use: 'Zoning Use',
+    bulk: 'Zoning Bulk',
+    building: 'Building',
+    value: 'Value'
+  }[mode];
+
+  ['use', 'bulk', 'building', 'value'].forEach(layer => {
+    map.setLayoutProperty(`${layer}-fill`, 'visibility', mode === layer ? 'visible' : 'none');
+    if (layer === 'bulk') {
+      map.setLayoutProperty('bulk-outline', 'visibility', mode === 'bulk' ? 'visible' : 'none');
     }
   });
 
   updateLegend(mode);
 }
 
-map.on('load', () => {
-  fetch('./gwzd_v5_with_bulk.geojson')
-    .then(res => res.json())
-    .then(data => {
-      data.features.forEach(f => {
-        const z = f.properties.ZONEDIST || '';
-        f.properties.USE_CATEGORY = z.includes('PARK') ? 'Parks'
-          : (/^M1|M3/.test(z) && !z.includes('/')) ? 'Manufacturing'
-          : z.includes('/') ? 'Mixed'
-          : 'Residential';
-      });
+// Load data and add all sources + layers
+map.on('load', async () => {
+  const zoningData = await fetch('./gwzd_v5_with_bulk.geojson').then(res => res.json());
+  const blockData = await fetch('./blocks_final.geojson').then(res => res.json());
 
-      map.addSource('zoning', { type: 'geojson', data });
+  // Add zoning and block sources
+  map.addSource('zoning', { type: 'geojson', data: zoningData });
+  map.addSource('blocks', { type: 'geojson', data: blockData });
 
-      map.addLayer({
-        id: 'use-fill',
-        type: 'fill',
-        source: 'zoning',
-        paint: {
-          'fill-color': [
-            'match', ['get', 'USE_CATEGORY'],
-            'Manufacturing', '#ce93d8',
-            'Residential', '#fff176',
-            'Mixed', '#ffb74d',
-            'Parks', '#a5d6a7',
-            '#9e9e9e'
-          ],
-          'fill-opacity': 0.6
-        }
-      });
+  // Zoning use fill
+  map.addLayer({
+    id: 'use-fill',
+    type: 'fill',
+    source: 'zoning',
+    paint: {
+      'fill-color': [
+        'match',
+        ['get', 'USE_CATEGORY'],
+        'Manufacturing', '#ce93d8',
+        'Residential', '#fff176',
+        'Mixed', '#ffb74d',
+        'Parks', '#a5d6a7',
+        '#9e9e9e'
+      ],
+      'fill-opacity': 0.6
+    }
+  });
 
-      map.addLayer({
-        id: 'bulk-fill',
-        type: 'fill',
-        source: 'zoning',
-        layout: { visibility: 'none' },
-        paint: {
-          'fill-color': [
-            'interpolate', ['linear'], ['get', 'far_change'],
-            0, 'transparent',
-            6, '#5ed7ff'
-          ],
-          'fill-opacity': 1
-        }
-      });
+  // Zoning FAR change
+  map.addLayer({
+    id: 'bulk-fill',
+    type: 'fill',
+    source: 'zoning',
+    layout: { visibility: 'none' },
+    paint: {
+      'fill-color': [
+        'interpolate', ['linear'], ['get', 'FAR_CHANGE'],
+        0, 'transparent',
+        6, '#5ed7ff'
+      ],
+      'fill-opacity': 1
+    }
+  });
 
-      map.addLayer({
-        id: 'bulk-outline',
-        type: 'line',
-        source: 'zoning',
-        layout: { visibility: 'none' },
-        paint: {
-          'line-color': '#999',
-          'line-width': 0.5
-        }
-      });
-    });
+  map.addLayer({
+    id: 'bulk-outline',
+    type: 'line',
+    source: 'zoning',
+    layout: { visibility: 'none' },
+    paint: {
+      'line-color': '#999',
+      'line-width': 0.5
+    }
+  });
 
-  fetch('./blocks_final.geojson')
-    .then(res => res.json())
-    .then(data => {
-      data.features = data.features.map(f => {
-        f.properties.value_change = +f.properties.value_change || 0;
-        f.properties.far_change = +f.properties.far_change || 0;
-        return f;
-      });
+  // Built FAR block layer
+  map.addLayer({
+    id: 'building-fill',
+    type: 'fill',
+    source: 'blocks',
+    layout: { visibility: 'none' },
+    paint: {
+      'fill-color': [
+        'interpolate', ['linear'], ['get', 'far_change'],
+        0, 'transparent',
+        6, '#5ed7ff'
+      ],
+      'fill-opacity': 1
+    }
+  });
 
-      map.addSource('blocks', { type: 'geojson', data });
+  // Property value change block layer
+  map.addLayer({
+    id: 'value-fill',
+    type: 'fill',
+    source: 'blocks',
+    layout: { visibility: 'none' },
+    paint: {
+      'fill-color': [
+        'interpolate', ['linear'], ['get', 'value_change'],
+        -500000000, '#a9746e',
+        0, 'transparent',
+        500000000, 'limegreen'
+      ],
+      'fill-opacity': 1
+    }
+  });
 
-      map.addLayer({
-        id: 'building-fill',
-        type: 'fill',
-        source: 'blocks',
-        layout: { visibility: 'none' },
-        paint: {
-          'fill-color': [
-            'interpolate', ['linear'], ['get', 'far_change'],
-            0, 'transparent',
-            6, '#5ed7ff'
-          ],
-          'fill-opacity': 1
-        }
-      });
-
-      map.addLayer({
-        id: 'value-fill',
-        type: 'fill',
-        source: 'blocks',
-        layout: { visibility: 'none' },
-        paint: {
-          'fill-color': [
-            'interpolate', ['linear'], ['get', 'value_change'],
-            -500000000, '#a9746e',
-            0, 'transparent',
-            500000000, 'limegreen'
-          ],
-          'fill-opacity': 1
-        }
-      });
-    });
-
+  // Fit map view to zoning bounds
   map.once('idle', () => {
-    const bounds = turf.bbox(map.getSource('zoning')._data);
+    const bounds = turf.bbox(zoningData);
     bounds[0] += 0.002;
     bounds[2] += 0.002;
     map.fitBounds(bounds, { padding: 40, maxZoom: 15 });
   });
 
+  // Popup on hover
   const popup = new mapboxgl.Popup({
     closeButton: false,
     closeOnClick: false,
@@ -184,40 +179,40 @@ map.on('load', () => {
     offset: [0, -10]
   });
 
-  function formatHover(p) {
-    return `
-      <strong>${p.NEIGHBORHOOD || 'Block ' + (p.BLOCK || 'N/A')}</strong><br>
-      2004: $${(+p.VALUE_2004 || 0).toLocaleString()} (${p.FAR_2004 || 'N/A'} FAR)<br>
-      2025: $${(+p.VALUE_2025 || 0).toLocaleString()} (${p.FAR_2025 || 'N/A'} FAR)
-    `;
-  }
-
-  function formatZoningHover(p) {
-    return `
-      <strong>${p.NEIGHBORHOOD || 'Unknown'}</strong><br>
-      Prior: ${p.PRIOR_ZONING || 'N/A'} (${p.FAR_BEFORE || 'N/A'} FAR)<br>
-      New: ${p.ZONEDIST || 'N/A'} (${p.FAR_AFTER || 'N/A'} FAR)
-    `;
-  }
-
-  map.on('mousemove', (e) => {
-    const features = map.queryRenderedFeatures(e.point, {
-      layers: currentMode === 'use' ? ['use-fill']
-           : currentMode === 'bulk' ? ['bulk-fill']
-           : currentMode === 'building' ? ['building-fill']
-           : ['value-fill']
-    });
-
-    if (features.length) {
-      const p = features[0].properties;
-      const content = currentMode === 'use' || currentMode === 'bulk'
-        ? formatZoningHover(p)
-        : formatHover(p);
-      popup.setLngLat(e.lngLat).setHTML(content).addTo(map);
+  const showPopup = (e) => {
+    const p = e.features[0].properties;
+    let html;
+    if (currentMode === 'use' || currentMode === 'bulk') {
+      html = `
+        <strong>${p.NEIGHBORHOOD || 'Zoning Info'}</strong><br>
+        Prior Zoning: ${p.PRIOR_ZONING || 'N/A'}<br>
+        New Zoning: ${p.ZONEDIST || 'N/A'}<br>
+        FAR Before: ${p.FAR_BEFORE || 'N/A'}<br>
+        FAR After: ${p.FAR_AFTER || 'N/A'}
+      `;
     } else {
-      popup.remove();
+      html = `
+        <strong>Block ${p.block || p.BLOCK || 'N/A'}</strong><br>
+        2004 Value: $${(+p.value_2004 || 0).toLocaleString()}<br>
+        2025 Value: $${(+p.value_2025 || 0).toLocaleString()}<br>
+        FAR 2004: ${p.far_2004 || 'N/A'}<br>
+        FAR 2025: ${p.far_2025 || 'N/A'}
+      `;
     }
-  });
+    popup.setLngLat(e.lngLat).setHTML(html).addTo(map);
+  };
 
+  // Attach hover events
+  map.on('mousemove', 'use-fill', e => currentMode === 'use' && showPopup(e));
+  map.on('mousemove', 'bulk-fill', e => currentMode === 'bulk' && showPopup(e));
+  map.on('mousemove', 'building-fill', e => currentMode === 'building' && showPopup(e));
+  map.on('mousemove', 'value-fill', e => currentMode === 'value' && showPopup(e));
+
+  map.on('mouseleave', 'use-fill', () => popup.remove());
+  map.on('mouseleave', 'bulk-fill', () => popup.remove());
+  map.on('mouseleave', 'building-fill', () => popup.remove());
+  map.on('mouseleave', 'value-fill', () => popup.remove());
+
+  // Set default legend
   updateLegend(currentMode);
 });
