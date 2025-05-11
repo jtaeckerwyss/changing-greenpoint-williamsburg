@@ -18,11 +18,36 @@ const map = new mapboxgl.Map({
 function updateLegend(mode) {
     const legend = document.getElementById('legend');
     if (mode === 'use') {
-        legend.innerHTML = `...`; // keep your existing legend here
+        legend.innerHTML = `
+          <strong>Zoning Use (Post-Rezoning)</strong><br><br>
+          <div><span style="background:#ce93d8; width:12px; height:12px; display:inline-block; margin-right:6px;"></span><b>Manufacturing:</b> preserved for exclusive industrial use</div>
+          <div><span style="background:#fff176; width:12px; height:12px; display:inline-block; margin-right:6px;"></span><b>Residential:</b> opened for new residential uses</div>
+          <div><span style="background:#ffb74d; width:12px; height:12px; display:inline-block; margin-right:6px;"></span><b>Mixed:</b> New mixed zones allow both residential and light manufacturing, but tend to result in housing due to market pressure.</div>
+          <div><span style="background:#a5d6a7; width:12px; height:12px; display:inline-block; margin-right:6px;"></span><b>Parks:</b> open space</div>
+          <br>
+          Learn more about the zoning codes at the 
+          <a href="https://www.nyc.gov/content/planning/pages/zoning" target="_blank" style="color:#8ecae6;">NYC Department of City Planning</a>
+        `;
     } else if (mode === 'bulk' || mode === 'building') {
-        legend.innerHTML = `...`; // same here
+        legend.innerHTML = `
+          <strong>New Residential Floor Area Ratio (FAR)</strong><br>
+          <div style="background:linear-gradient(to right, transparent, #5ed7ff); height: 15px; margin: 6px 0;"></div>
+          <span style="font-size:12px;">0</span><span style="float:right; font-size:12px;">6</span><br><br>
+          FAR measures building bulk by comparing total floor area to lot size. Higher FAR values allow taller or denser buildings, enabling more residential development on a site.<br><br>
+          All FAR is calculated at the block level.<br><br>
+          Learn more about the zoning codes at the 
+          <a href="https://www.nyc.gov/content/planning/pages/zoning" target="_blank" style="color:#8ecae6;">NYC Department of City Planning</a>
+        `;
     } else if (mode === 'value') {
-        legend.innerHTML = `...`; // and here
+        legend.innerHTML = `
+          <strong>Change in Assessed Property Value (2004–2025)</strong><br>
+          <div style="background:linear-gradient(to right, transparent, limegreen); height: 15px; margin: 6px 0;"></div>
+          <span style="font-size:12px;">0</span><span style="float:right; font-size:12px;">Max</span><br><br>
+          Assessed value reflects the city’s taxable estimate of a property’s worth, used to calculate property taxes. It does not necessarily represent market value.<br><br>
+          All property values are calculated at the block level.<br><br>
+          Learn more about the zoning codes at the 
+          <a href="https://www.nyc.gov/site/finance/property/property-determining-your-assessed-value.page" target="_blank" style="color:#8ecae6;">NYC Department of Finance</a>
+        `;
     }
 }
 
@@ -48,6 +73,12 @@ function setMapMode(mode) {
 map.on('load', async () => {
     const zoning = await fetch('./gwzd_v5_with_bulk.geojson').then(res => res.json());
     const blocks = await fetch('./blocks_final.geojson').then(res => res.json());
+
+    blocks.features = blocks.features.map(f => {
+        f.properties.value_change = +f.properties.value_change || 0;
+        f.properties.far_change = +f.properties.far_change || 0;
+        return f;
+    });
 
     map.addSource('zoning', { type: 'geojson', data: zoning });
     map.addSource('blocks', { type: 'geojson', data: blocks });
@@ -126,7 +157,8 @@ map.on('load', async () => {
                 ['linear'],
                 ['get', 'value_change'],
                 0, 'transparent',
-                30000000, 'limegreen'
+                500000000, 'limegreen',
+                -500000000, '#a9746e',
             ],
             'fill-opacity': 1
         }
