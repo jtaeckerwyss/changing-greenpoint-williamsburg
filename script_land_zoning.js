@@ -18,36 +18,11 @@ const map = new mapboxgl.Map({
 function updateLegend(mode) {
     const legend = document.getElementById('legend');
     if (mode === 'use') {
-        legend.innerHTML = `
-          <strong>Zoning Use (Post-Rezoning)</strong><br><br>
-          <div><span style="background:#ce93d8; width:12px; height:12px; display:inline-block; margin-right:6px;"></span><b>Manufacturing:</b> preserved for exclusive industrial use</div>
-          <div><span style="background:#fff176; width:12px; height:12px; display:inline-block; margin-right:6px;"></span><b>Residential:</b> opened for new residential uses</div>
-          <div><span style="background:#ffb74d; width:12px; height:12px; display:inline-block; margin-right:6px;"></span><b>Mixed:</b> New mixed zones allow both residential and light manufacturing, but tend to result in housing due to market pressure.</div>
-          <div><span style="background:#a5d6a7; width:12px; height:12px; display:inline-block; margin-right:6px;"></span><b>Parks:</b> open space</div>
-          <br>
-          Learn more about the zoning codes at the 
-          <a href="https://www.nyc.gov/content/planning/pages/zoning" target="_blank" style="color:#8ecae6;">NYC Department of City Planning</a>
-        `;
+        legend.innerHTML = `...`; // keep your existing legend here
     } else if (mode === 'bulk' || mode === 'building') {
-        legend.innerHTML = `
-          <strong>New Residential Floor Area Ratio (FAR)</strong><br>
-          <div style="background:linear-gradient(to right, transparent, #5ed7ff); height: 15px; margin: 6px 0;"></div>
-          <span style="font-size:12px;">0</span><span style="float:right; font-size:12px;">6</span><br><br>
-          FAR measures building bulk by comparing total floor area to lot size. Higher FAR values allow taller or denser buildings, enabling more residential development on a site.<br><br>
-          All FAR is calculated at the block level.<br><br>
-          Learn more about the zoning codes at the 
-          <a href="https://www.nyc.gov/content/planning/pages/zoning" target="_blank" style="color:#8ecae6;">NYC Department of City Planning</a>
-        `;
+        legend.innerHTML = `...`; // same here
     } else if (mode === 'value') {
-        legend.innerHTML = `
-          <strong>Change in Assessed Property Value (2004–2025)</strong><br>
-          <div style="background:linear-gradient(to right, transparent, limegreen); height: 15px; margin: 6px 0;"></div>
-          <span style="font-size:12px;">0</span><span style="float:right; font-size:12px;">Max</span><br><br>
-          Assessed value reflects the city’s taxable estimate of a property’s worth, used to calculate property taxes. It does not necessarily represent market value.<br><br>
-          All property values are calculated at the block level.<br><br>
-          Learn more about the zoning codes at the 
-          <a href="https://www.nyc.gov/site/finance/property/property-determining-your-assessed-value.page" target="_blank" style="color:#8ecae6;">NYC Department of Finance</a>
-        `;
+        legend.innerHTML = `...`; // and here
     }
 }
 
@@ -175,7 +150,25 @@ map.on('load', async () => {
 
     const showPopup = (e) => {
         const p = e.features[0].properties;
-        popup.setLngLat(e.lngLat).setHTML(p.hover || 'No data available').addTo(map);
+        let html;
+        if (currentMode === 'use' || currentMode === 'bulk') {
+            html = `
+                <strong>Zoning Info</strong><br>
+                Prior Zoning: ${p.PRIOR_ZONING || 'N/A'}<br>
+                New Zoning: ${p.ZONEDIST || 'N/A'}<br>
+                FAR Before: ${p.FAR_BEFORE || 'N/A'}<br>
+                FAR After: ${p.FAR_AFTER || 'N/A'}
+            `;
+        } else {
+            html = `
+                <strong>Block ${p.block || 'N/A'}</strong><br>
+                2004 Value: $${(+p.value_2004 || 0).toLocaleString()}<br>
+                2025 Value: $${(+p.value_2025 || 0).toLocaleString()}<br>
+                FAR 2004: ${p.far_2004 || 'N/A'}<br>
+                FAR 2025: ${p.far_2025 || 'N/A'}
+            `;
+        }
+        popup.setLngLat(e.lngLat).setHTML(html).addTo(map);
     };
 
     map.on('mousemove', 'use-fill', e => currentMode === 'use' && showPopup(e));
